@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reddit-Clone</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css">
+  <style type="text/css">
+    .post {
+      background-color: #f8f8f8;
+      border-color: #e7e7e7;
+      border: 1px solid #e7e7e7;
+      border-radius: 4px;
+      margin-top: 15px;
+      margin-bottom: 15px;
+    }
+    img {
+      margin: 15px;
+      width: 220px;
+      height: 180px;
+    }
+    .postive {
+      color: green;
+    }
+    .negative {
+      color: red;
+    }
+    li {
+      list-style-type:none;
+    }
+    ul {
+      padding: 0px;
+    }
+    .ng-enter {
+      transition:0.4s ease all;
+      opacity:0;
+      transform:translateX(-100%);
+    }
+
+    .ng-enter.ng-enter-active {
+      opacity:1;
+      transform:translateX(0);
+    }
+
+    .ng-leave {
+      transition:0.4s ease all;
+      opacity:1;
+      transform:translateX(0);
+    }
+
+    .ng-leave.ng-leave-active {
+      opacity:0;
+      transform:translateX(-100%);
+    }
+
+    .ng-enter-stagger, .ng-leave-stagger {
+      transition-delay: 0.2s;
+      transition-duration:0;
+    }
+  </style>
+</head>
+<body ng-app="RedditApp" ng-cloak>
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#">Reddit Clone</a>
+      <ul class="nav navbar-nav">
+        <li ng-click="postFormOpen = !postFormOpen"><a href="#"><span class="glyphicon glyphicon-plus"></span> Submit Post</a></li>
+      </ul>
+      <form class="navbar-form navbar-left" role="search">
+        <div class="form-group">
+          <input type="text" class="form-control" placeholder="Search" ng-model="searchText">
+        </div>
+      </form>
+      <ul class="nav navbar-nav navbar-left">
+        <li class="dropdown" ng-init="sort='votes'">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Sort By {{sort}} <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+            <li ng-click="sort = 'votes'"><a href="#">Votes</a></li>
+            <li ng-click="sort = 'date'"><a href="#">Date</a></li>
+            <li ng-click="sort = 'title'"><a href="#">Title</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container-fluid" ng-controller="MotherController">
+    <div class="col-xs-offset-1 col-xs-10" ng-show='postFormOpen'>
+      <form ng-submit="submitPost()" name="submissions">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input type="text" class="form-control" id="title" placeholder="Title" ng-model='form.title' required>
+        </div>
+        <div class="form-group">
+          <label for="author">Author</label>
+          <input type="text" class="form-control" id="author" placeholder="Author" ng-model='form.author' required>
+        </div>
+        <div class="form-group">
+          <label for="image">Image URL</label>
+          <input type="text" class="form-control" id="image" placeholder="Image URL" ng-model='form.image' required>
+        </div>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <input type="text" class="form-control" id="description" placeholder="Description" ng-model='form.description' required>
+        </div>
+        <button type="submit" class="btn btn-default">Submit Post</button>
+      </form>
+    </div>
+    <div class="col-xs-offset-1 col-xs-10 post" ng-repeat="post in posts | orderBy: sort : sort === 'title' ? false : true | filter: searchText">
+      <div class="col-xs-3">
+        <img ng-src="{{post.img}}" alt="image"/>
+      </div>
+      <div class="col-xs-9">
+        <h5> {{post.title}} | 
+          <span class="glyphicon glyphicon-arrow-up" ng-click="upvote(post.id)"></span>
+          <span class="glyphicon glyphicon-arrow-down" ng-click="downvote(post.id)"></span>
+          <span ng-class="{postive: post.votes > 0, negative: post.votes < 0}">{{post.votes}} </span>
+        </h5>
+        <p class="text-right">By {{post.author}}</p>
+        <p>{{post.content}}</p>
+        <br>
+        <p> 
+          <span class="glyphicon glyphicon-calendar"></span>
+          <time>{{ post.date | amCalendar }}</time> |
+          <span ng-click="post.openComments = !post.openComments">
+            <span class="glyphicon glyphicon-comment"></span>
+            {{post.comments.length}} <ng-pluralize count='post  .comments.length' when="{'1': 'comment', 'other': 'comments'}"></ng-pluralize>
+          </span> |
+          <span ng-click="post.openCommentForm = !post.openCommentForm">
+            <span class="glyphicon glyphicon-pencil" ></span>
+            Add Comment
+          </span>
+        </p>
+        <ul ng-show="post.openComments">
+          <li ng-repeat="comment in post.comments">
+            <b>{{comment.user}}</b> - {{comment.comment}}
+          </li>
+        </ul>
+        <form ng-submit="submitComment(post.id)" name="comments" ng-show='post.openCommentForm'>
+          <div class="form-group">
+            <label for="user">Author</label>
+            <input type="text" id="user" placeholder="username" ng-model='form.user' required>
+            <label for="comment">Text</label>
+            <input type="text" id="comment" placeholder="comment text" ng-model='form.comment' required>
+            <button type="submit" class="btn btn-default">Add Comment</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-2.2.1.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+  <!-- load momentJS (required for angular-moment) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.9.0/moment.min.js"></script>
+  <!-- load angular-moment -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-moment/0.9.0/angular-moment.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.js"></script>
+  <script type="text/javascript" src="script.js"></script>
+</body>
+</html>
